@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+server/dist/
+
+# Database
+data.db
+data.db-shm
+data.db-wal
+
+# Docker data
+appdata/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env
+.env
+
+# Logs
+*.log
