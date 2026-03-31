@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 - TRPG 捏人审核</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.5;
+    }
+    .header {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header h1 { font-size: 1.2rem; color: #444; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header .stats { font-size: 0.85rem; color: #888; }
+    .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .filter-btn {
+      padding: 6px 16px;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all .15s;
+    }
+    .filter-btn:hover { background: #f0f0f0; }
+    .filter-btn.active { background: #555; color: #fff; border-color: #555; }
+    .card-list { display: flex; flex-direction: column; gap: 14px; }
+    .card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      transition: box-shadow .15s;
+    }
+    .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .card-preview {
+      flex-shrink: 0;
+      width: 96px;
+      height: 96px;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      background: #f9f9f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .card-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+    .card-preview .no-img {
+      font-size: 0.7rem;
+      color: #ccc;
+    }
+    .card-body { flex: 1; min-width: 0; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .card-username { font-weight: 600; font-size: 1rem; }
+    .card-time { font-size: 0.75rem; color: #aaa; }
+    .card-message {
+      color: #555;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .card-config-toggle {
+      font-size: 0.78rem;
+      color: #888;
+      cursor: pointer;
+      user-select: none;
+    }
+    .card-config-toggle:hover { color: #555; }
+    .card-config {
+      display: none;
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: monospace;
+      max-height: 200px;
+      overflow: auto;
+      word-break: break-all;
+    }
+    .card-config.show { display: block; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+    .badge-pending { background: #fff3e0; color: #e65100; }
+    .badge-approved { background: #e8f5e9; color: #2e7d32; }
+    .badge-rejected { background: #fce4ec; color: #c62828; }
+    .card-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+    .btn {
+      padding: 6px 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: all .15s;
+      background: #fff;
+    }
+    .btn:hover { background: #f5f5f5; }
+    .btn-approve { color: #2e7d32; border-color: #a5d6a7; }
+    .btn-approve:hover { background: #e8f5e9; }
+    .btn-reject { color: #c62828; border-color: #ef9a9a; }
+    .btn-reject:hover { background: #fce4ec; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-delete { color: #888; border-color: #ccc; }
+    .btn-delete:hover { background: #f5f5f5; color: #c62828; border-color: #ef9a9a; }
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 0.95rem;
+    }
+    .toolbar-btn {
+      padding: 6px 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    .toolbar-btn:hover { background: #f0f0f0; }
+    .logout-btn { color: #c55; border-color: #ef9a9a; }
+    .logout-btn:hover { background: #fce4ec; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>TRPG 捏人审核后台</h1>
+    <div class="header-right">
+      <span class="stats" id="statsText"></span>
+      <button class="toolbar-btn" onclick="loadSubmissions()">刷新</button>
+      <button class="toolbar-btn logout-btn" onclick="doLogout()">退出登录</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+      <button class="filter-btn" data-filter="pending" onclick="setFilter('pending', this)">待审核</button>
+      <button class="filter-btn" data-filter="approved" onclick="setFilter('approved', this)">已通过</button>
+      <button class="filter-btn" data-filter="rejected" onclick="setFilter('rejected', this)">已拒绝</button>
+    </div>
+    <div class="card-list" id="cardList"></div>
+  </div>
+
+  <script>
+    var allSubmissions = [];
+    var currentFilter = 'all';
+
+    function loadSubmissions() {
+      fetch('/admin/api/submissions')
+        .then(function(res) {
+          if (res.status === 401) { window.location.href = '/admin/login'; return null; }
+          return res.json();
+        })
+        .then(function(data) {
+          if (!data) return;
+          if (data.success) {
+            allSubmissions = data.data;
+            renderList();
+            updateStats();
+          }
+        })
+        .catch(function(err) { console.error('加载失败:', err); });
+    }
+
+    function updateStats() {
+      var pending = allSubmissions.filter(function(s) { return s.status === 'pending'; }).length;
+      var approved = allSubmissions.filter(function(s) { return s.status === 'approved'; }).length;
+      var rejected = allSubmissions.filter(function(s) { return s.status === 'rejected'; }).length;
+      document.getElementById('statsText').textContent =
+        '共 ' + allSubmissions.length + ' 条 | 待审核 ' + pending + ' | 已通过 ' + approved + ' | 已拒绝 ' + rejected;
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderList();
+    }
+
+    function renderList() {
+      var list = document.getElementById('cardList');
+      var filtered = currentFilter === 'all'
+        ? allSubmissions
+        : allSubmissions.filter(function(s) { return s.status === currentFilter; });
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty">暂无记录</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(function(s) {
+        var badgeClass = 'badge-' + s.status;
+        var statusText = s.status === 'pending' ? '待审核' : (s.status === 'approved' ? '已通过' : '已拒绝');
+        var isApproved = s.status === 'approved';
+        var isRejected = s.status === 'rejected';
+        var imgHtml = s.image
+          ? '<img src="' + escapeAttr(s.image) + '" alt="小人预览">'
+          : '<span class="no-img">无预览</span>';
+        return '<div class="card" id="card-' + s.id + '">' +
+          '<div class="card-preview">' + imgHtml + '</div>' +
+          '<div class="card-body">' +
+            '<div class="card-header">' +
+              '<span class="card-username">' + escapeHtml(s.username) + '</span>' +
+              '<span class="badge ' + badgeClass + '">' + statusText + '</span>' +
+              '<span class="card-time">' + s.created_at + '</span>' +
+            '</div>' +
+            '<div class="card-message">' + escapeHtml(s.message) + '</div>' +
+            '<span class="card-config-toggle" onclick="toggleConfig(' + s.id + ')">[ 查看配置 ]</span>' +
+            '<pre class="card-config" id="config-' + s.id + '">' + escapeHtml(s.config) + '</pre>' +
+          '</div>' +
+          '<div class="card-actions">' +
+            '<button class="btn btn-approve" ' + (isApproved ? 'disabled' : '') + ' onclick="review(' + s.id + ', \'approved\')">' + (isRejected ? '改为通过' : '通过') + '</button>' +
+            '<button class="btn btn-reject" ' + (isRejected ? 'disabled' : '') + ' onclick="review(' + s.id + ', \'rejected\')">' + (isApproved ? '改为拒绝' : '拒绝') + '</button>' +
+            '<button class="btn btn-delete" onclick="deleteSubmission(' + s.id + ')">删除</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function toggleConfig(id) {
+      var el = document.getElementById('config-' + id);
+      el.classList.toggle('show');
+    }
+
+    function doLogout() {
+      fetch('/auth/logout', { method: 'POST' })
+        .then(function() { window.location.href = '/admin/login'; })
+        .catch(function() { window.location.href = '/admin/login'; });
+    }
+
+    function review(id, action) {
+      fetch('/admin/api/review/' + id, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: action })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          loadSubmissions();
+        } else {
+          alert('操作失败: ' + (data.error || '未知错误'));
+        }
+      })
+      .catch(function() { alert('网络错误'); });
+    }
+
+    function deleteSubmission(id) {
+      if (!confirm('确定要删除这条记录吗？此操作不可撤销。')) return;
+      fetch('/admin/api/submissions/' + id, { method: 'DELETE' })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            loadSubmissions();
+          } else {
+            alert('删除失败: ' + (data.error || '未知错误'));
+          }
+        })
+        .catch(function() { alert('网络错误'); });
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    loadSubmissions();
+  </script>
+</body>
+</html>

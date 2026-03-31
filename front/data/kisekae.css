@@ -1,0 +1,469 @@
+
+body, html {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	font-size: 0.9rem;
+}
+
+body {
+	background: #E8EFF6;
+}
+
+/* キャンバス */
+#Canvas {
+	width:  0px;
+	height: 0px;
+	background-color: #ddd;
+	image-rendering: pixelated;
+	image-rendering : -moz-crisp-edges;    /* Firefox */
+}
+
+div.all{
+	background-color: #fff;
+	box-shadow: 0 2px 16px rgba(0,68,124,0.12);
+	width: 1000px;
+	min-width: 1000px;
+	margin: 0 auto;
+	border-radius: 0 0 8px 8px;
+}
+
+/* 画面右と左が入る、本体コンテナ */
+div.main{
+	display: flex;
+	justify-content: center;
+}
+
+/* 画面左右 */
+div.right, div.left {
+	box-sizing: border-box;
+	padding: 30px;
+}
+
+/* 画面左 */
+div.left{
+	position: sticky;
+	width: 231px;
+	height: 100vh;
+	top: 0;
+	padding-right: 0;
+	line-height: 1.4rem;
+	overflow: hidden;
+}
+
+/* ボタングループ */
+.btn-group {
+	display: flex;
+	gap: 4px;
+	margin: 8px 0;
+	flex-wrap: wrap;
+}
+
+.btn-group .default_button {
+	flex: 1;
+	min-width: 0;
+	margin-bottom: 0;
+	padding: 0 6px;
+	font-size: 0.78rem;
+	white-space: nowrap;
+}
+
+.check2x-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	cursor: pointer;
+	font-size: 0.78rem;
+	justify-content: center;
+}
+
+.btn-reset {
+	color: #b33;
+	border-color: #daa;
+}
+
+/* 画面右 */
+div.right{
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	position: sticky;
+	top: 0;
+	padding: 0;
+}
+
+/* 横向 Tab 导航栏 */
+.tab-bar {
+	display: flex;
+	gap: 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	background: #00447C;
+	border-bottom: none;
+	flex-shrink: 0;
+	scrollbar-width: thin;
+	-webkit-overflow-scrolling: touch;
+}
+.tab-bar::-webkit-scrollbar {
+	height: 4px;
+}
+.tab-bar::-webkit-scrollbar-thumb {
+	background: rgba(255,255,255,0.3);
+	border-radius: 2px;
+}
+.tab-btn {
+	flex-shrink: 0;
+	padding: 8px 14px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	cursor: pointer;
+	font-size: 0.78rem;
+	color: rgba(255,255,255,0.6);
+	white-space: nowrap;
+	transition: color .15s, border-color .15s;
+}
+.tab-btn:hover { color: rgba(255,255,255,0.85); }
+.tab-btn.active {
+	color: #fff;
+	border-bottom-color: #C5A664;
+	font-weight: 600;
+}
+
+/* 画面右のスクロールする中身用 */
+div.right-scroll{
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 10px;
+}
+
+/* Tab 面板 */
+.tab-panel {
+	display: none;
+}
+.tab-panel.active {
+	display: block;
+}
+
+/* パーツ・色ピッカーの追加されるコンテナ */
+#ImageContainer {
+}
+
+/* パーツ選択用イメージ */
+img.parts{
+	image-rendering: pixelated;
+	image-rendering : -moz-crisp-edges;    /* Firefox */
+}
+
+/* パーツのコンテナ */
+div.parts-container{
+	position: relative;
+	border: solid 1px #b8cfe0;
+	border-radius: 6px;
+	margin-bottom: 16px;
+	padding: 18px;
+	background: #fafcff;
+}
+
+/* パーツごとのパレットのコンテナ */
+div.palette-container{
+}
+
+/* 使用色とパレットのコンテナ */
+.Result {
+	display: flex;
+	padding-top: 10px;
+}
+
+/* 現在の使用色表示用コンテナ */
+#ResultPaletteContainer {
+	padding-left: 10px;
+	width : 146px;
+}
+
+/* 現在の使用色表示 */
+div.color-sample{
+	width:10;
+	height:10;
+	display: inline-block;
+}
+
+/* 現在使用色の数表示*/
+.used-colors{
+}
+
+/* 現在のスポイトの色 */
+#Spuit{
+	color : #fff;
+	font-size: 0.4rem;
+	text-align : center;
+	width : 44px;
+	height : 44px;
+	border-radius: 2px;
+	line-height : 44px
+}
+
+/* パレット関係の枠 */
+.palette-container {
+	border-top: dotted 1px #999;
+	margin-top: 12px;
+	padding: 8px 6px 0;
+}
+
+/* カラーピッカー呼び出しボタン */
+input.color-picker{
+	width:22px;
+	height:30px;
+	margin-right: 1px;
+	padding: 0;
+	border: solid 1px #bbb;
+	background-color: #fff;
+	vertical-align: middle;
+	border-radius: 2px;
+}
+
+input.color-picker:focus {
+	outline:0;
+}
+
+/* resetボタン */
+.default-button{
+	width:50px;
+	margin-right: 10px;
+	margin-left: 10px;
+}
+
+input:hover{
+	cursor:pointer;
+	background-color:#aaa;
+	transition: all .1s ease;
+}
+
+/* 前髪の色に合わせるボタン */
+.synchronize-button{
+	width:148px;
+	margin-left: 10px;
+}
+
+/* 適用ボタン */
+.apply-template-button{
+	width:50px;
+}
+
+/* 画像を保存・設定を保存ボタン */
+.default_button {
+	margin-bottom: 4px;
+}
+
+.apply-template-button, .default_button, .default-button, .synchronize-button{
+	height:30px;
+	vertical-align: middle;
+	border: solid 1px #00447C;
+	background-color: #fff;
+	color: #00447C;
+	border-radius: 5px;
+	transition: background .15s, color .15s;
+}
+
+.apply-template-button:hover, .default_button:hover, .default-button:hover, .synchronize-button:hover{
+	background-color: #00447C;
+	color: #fff;
+}
+
+/* カラーテンプレート選択ボタン */
+.apply-template-select{
+	margin-right: 2px;
+	margin-left: 10px;
+	height:30px;
+	vertical-align: middle;
+	border-radius: 5px;
+}
+
+/* パーツタイトル */
+.parts-container-title{
+	position: absolute;
+	display: inline-block;
+	top: -7px;
+	left: 10px;
+	padding: 0 9px;
+	line-height: 1;
+	background: #fafcff;
+	color: #00447C;
+	font-weight: 600;
+	font-size: 0.8rem;
+}
+
+/* ヘッダ */
+.header {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background: #00447C;
+	padding: 12px 20px;
+	border-bottom: 3px solid #C5A664;
+}
+
+.header-title {
+	color: #fff;
+	font-size: 1.1rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+}
+
+/* フッタ */
+.footer {
+	position: relative;
+	text-align:center;
+	background: #f9f9f9;
+	border-top: dotted 1px #e0e0e0;
+	padding: 70px 0;
+}
+
+#LoadingOverlay{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	font-size: 2rem;
+	background: rgba(255, 255, 255, 1);
+	z-index: 99999;
+}
+
+hr {
+	border-top: 1px dotted #8c8b8b;
+	border-bottom: none;
+	margin: 20px 0;
+}
+
+/* 提交作品区域 */
+.submit-section {
+	margin-top: 5px;
+}
+
+.submit-title {
+	font-weight: bold;
+	color: #00447C;
+	margin-bottom: 8px;
+	font-size: 0.95rem;
+}
+
+.submit-form label {
+	display: block;
+	color: #888;
+	margin-bottom: 2px;
+	font-size: 0.8rem;
+}
+
+.submit-input {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 6px 8px;
+	margin-bottom: 8px;
+	border: solid 1px #ccc;
+	border-radius: 4px;
+	font-size: 0.85rem;
+	font-family: inherit;
+	outline: none;
+	transition: border-color .2s;
+}
+
+.submit-input:focus {
+	border-color: #00447C;
+}
+
+.submit-textarea {
+	resize: vertical;
+	min-height: 50px;
+}
+
+.submit-btn {
+	width: 100%;
+	margin-top: 2px;
+	background: #00447C !important;
+	color: #fff !important;
+	border-color: #00447C !important;
+	font-weight: 600;
+}
+
+.submit-btn:hover {
+	background: #003366 !important;
+}
+
+.submit-status {
+	margin-top: 6px;
+	font-size: 0.8rem;
+	min-height: 1.2em;
+}
+
+.submit-status.success {
+	color: #4a9;
+}
+
+.submit-status.error {
+	color: #c55;
+}
+
+.toast {
+	position: fixed;
+	top: 20px;
+	left: 50%;
+	transform: translateX(-50%) translateY(-20px);
+	padding: 10px 22px;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	color: #fff;
+	opacity: 0;
+	transition: opacity 0.25s, transform 0.25s;
+	z-index: 9999;
+	pointer-events: none;
+	box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.toast.show {
+	opacity: 1;
+	transform: translateX(-50%) translateY(0);
+}
+
+.toast-info { background: #00447C; }
+.toast-success { background: #2e7d32; }
+.toast-error { background: #c62828; }
+
+/* 未使用。ファイルドロップ機能が実装されていた頃のもの 
+div.dropzone {
+	width: 500px;
+	height: 100px;
+	border: 1px #ababab dashed;
+	margin: 50px auto;
+}
+
+div.dropzone p {
+	text-align: center;
+	line-height: 100px;
+	margin: 0;
+	padding: 0;
+}
+
+色コピーボタン
+input.color-copy-button{
+	width:55px;
+	height:25px;
+	margin-top: 5px;
+	margin-right: 2px;
+}
+
+色ペーストボタン
+input.color-paste-button{
+	width:60px;
+	height:25px;
+	margin-top: 5px;
+	margin-right: 2px;
+}
+
+*/

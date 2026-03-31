@@ -1,0 +1,10 @@
+node_modules
+server/node_modules
+server/dist
+data.db
+data.db-shm
+data.db-wal
+appdata
+.DS_Store
+*.log
+.git

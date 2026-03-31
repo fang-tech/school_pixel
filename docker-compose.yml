@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    container_name: swjtu-pixel-maker
+    ports:
+      - "80:3000"
+    volumes:
+      - ./appdata:/data
+    environment:
+      - PORT=3000
+      - DB_PATH=/data/data.db
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-tianyufang}
+      - SESSION_SECRET=${SESSION_SECRET:-trpg-dot-maker-secret-key-2026}
+    restart: unless-stopped

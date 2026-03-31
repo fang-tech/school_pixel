@@ -1,0 +1,348 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>SWJTU 像素形象工坊</title>
+    <script type="text/javascript" src="./psd.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./dotKisekae.js" charset="utf-8"></script>
+    <link rel="stylesheet" type="text/css" href="./kisekae.css">
+    </style>
+  </head>
+  <body onload="onLoad();" ondragover="onDragOverSetting(event);" ondrop="onDropSetting(event);">
+<!-- <div class="dropzone" ondrop="onDrop(event);" ondragover="onDragOver(event);"><p>drop psd file here.</p></div><br> -->
+    <div class="all">
+      <div class="header">
+        <span class="header-title">SWJTU 像素形象工坊</span>
+      </div>
+      <div class="main">
+        <div class="left">
+          <canvas id="Canvas">需要支持canvas标签的浏览器。</canvas>
+          <div class="Result" style="display:none;">
+            <div id="Spuit">吸管</div>
+            <div id="ResultPaletteContainer"></div>
+          </div>
+          <div class="btn-group">
+            <input type="button" class="default_button" value="保存图片" onclick="saveCanvasAsPng(event);">
+            <label class="default_button check2x-label"><input type="checkbox" id="check2x" class="default_checkbox"> 2x</label>
+          </div>
+          <div class="btn-group">
+            <input type="button" class="default_button" value="保存设置" onclick="saveSetting(event);">
+            <input type="button" class="default_button" value="加载设置" onclick="document.getElementById('configFileInput').click();">
+            <input type="button" class="default_button btn-reset" value="重置形象" onclick="resetCharacter();">
+          </div>
+          <input type="file" id="configFileInput" accept=".json" style="display:none;" onchange="loadSettingFile(this);">
+          <div class="submit-section">
+            <div class="submit-title">提交作品</div>
+            <div class="submit-form">
+              <label for="submitUsername">用户名</label>
+              <input type="text" id="submitUsername" class="submit-input" placeholder="请输入用户名" maxlength="50">
+              <label for="submitMessage">寄语</label>
+              <textarea id="submitMessage" class="submit-input submit-textarea" placeholder="写一句寄语吧" maxlength="200" rows="3"></textarea>
+              <input type="button" class="default_button submit-btn" value="提交作品" onclick="submitWork();">
+              <div id="submitStatus" class="submit-status"></div>
+            </div>
+          </div>
+        </div>
+        <div class="right">
+          <div class="tab-bar" id="tabBar"></div>
+          <div class="right-scroll">
+            <div id="ImageContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    // 从外部加载配置（供 iframe 调用）
+    function loadConfig(c) {
+      if (!c || !c.select || !c.paletteSetting) return;
+      for (var d = 1; d <= partsLayer; d++) select[d] = [];
+      partsList.forEach(function(e, g) {
+        c.select[g] && e.forEach(function(f, m) {
+          c.select[g][m] && (select[g][m] = c.select[g][m]);
+        });
+      });
+      partsList.forEach(function(e, g) {
+        c.paletteSetting[g] && e.forEach(function(f, m) {
+          if (c.paletteSetting[g][m]) {
+            var k = c.paletteSetting[g][m];
+            Object.keys(k).forEach(function(h) {
+              partsList[g][m].palette[h] = k[h];
+            });
+          }
+        });
+      });
+      updateAllButtonColor();
+      drawResult();
+    }
+
+    // 监听来自父窗口的消息
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'loadConfig') {
+        loadConfig(e.data.config);
+      }
+    });
+
+    // 引擎加载完成后的回调
+    function onEngineReady() {
+      if (window.parent !== window) window.parent.postMessage({ type: 'makerReady' }, '*');
+      restoreConfig();
+      reorganizeUI();
+      hookAutoSave();
+    }
+
+    // 从 localStorage 恢复上次配置
+    function restoreConfig() {
+      try {
+        var saved = localStorage.getItem('dotKisekae_config');
+        if (saved) {
+          var c = JSON.parse(saved);
+          if (c && c.select && c.paletteSetting) {
+            loadConfig(c);
+          }
+        }
+      } catch(e) { /* ignore */ }
+    }
+
+    // 自动保存：hook drawResult，防抖写入 localStorage
+    var _saveTimer = null;
+    function hookAutoSave() {
+      var origDraw = window.drawResult;
+      window.drawResult = function() {
+        origDraw.apply(this, arguments);
+        if (_saveTimer) clearTimeout(_saveTimer);
+        _saveTimer = setTimeout(function() {
+          try {
+            var cfg = getCurrentConfig();
+            localStorage.setItem('dotKisekae_config', JSON.stringify(cfg));
+          } catch(e) { /* ignore quota errors */ }
+        }, 500);
+      };
+    }
+
+    // 部件分组定义
+    var PART_GROUPS = [
+      { name: '身体', keywords: ['基础', '肌肤'] },
+      { name: '头部', keywords: ['面部', '眼'] },
+      { name: '头发', keywords: ['刘海', '侧发', '后发', '呆毛', '绑发', '动物耳', '发饰'] },
+      { name: '上装', keywords: ['上衣', '袖子', '手套'] },
+      { name: '下装', keywords: ['下装', '袜子', '鞋子'] }
+    ];
+
+    function classifyPart(title) {
+      for (var i = 0; i < PART_GROUPS.length; i++) {
+        for (var j = 0; j < PART_GROUPS[i].keywords.length; j++) {
+          if (title.indexOf(PART_GROUPS[i].keywords[j]) !== -1) return i;
+        }
+      }
+      return -1;
+    }
+
+    // 将部件面板按分组重组为 Tab 导航
+    function reorganizeUI() {
+      var container = document.getElementById('ImageContainer');
+      var tabBar = document.getElementById('tabBar');
+      if (!container || !tabBar) return;
+
+      var panels = container.querySelectorAll('.parts-container');
+      if (panels.length === 0) return;
+
+      // 按分组收集面板
+      var grouped = [];
+      for (var g = 0; g < PART_GROUPS.length; g++) grouped.push([]);
+      var ungrouped = [];
+
+      panels.forEach(function(panel) {
+        var titleEl = panel.querySelector('.parts-container-title');
+        var title = titleEl ? titleEl.textContent.trim() : '';
+        var gIdx = classifyPart(title);
+        if (gIdx >= 0) {
+          grouped[gIdx].push(panel);
+        } else {
+          ungrouped.push(panel);
+        }
+      });
+
+      // 如果有未分组的，加一个"其他" tab
+      if (ungrouped.length > 0) {
+        PART_GROUPS.push({ name: '其他', keywords: [] });
+        grouped.push(ungrouped);
+      }
+
+      var tabIdx = 0;
+      for (var g = 0; g < grouped.length; g++) {
+        if (grouped[g].length === 0) continue;
+
+        // 创建 Tab 按钮
+        var btn = document.createElement('button');
+        btn.className = 'tab-btn' + (tabIdx === 0 ? ' active' : '');
+        btn.textContent = PART_GROUPS[g].name;
+        btn.setAttribute('data-tab-idx', tabIdx);
+        btn.onclick = (function(idx) { return function() { switchTab(idx); }; })(tabIdx);
+        tabBar.appendChild(btn);
+
+        // 创建面板容器
+        var wrapper = document.createElement('div');
+        wrapper.className = 'tab-panel' + (tabIdx === 0 ? ' active' : '');
+        wrapper.setAttribute('data-tab-idx', tabIdx);
+        container.appendChild(wrapper);
+
+        // 把属于该组的所有 parts-container 移入
+        grouped[g].forEach(function(panel) {
+          wrapper.appendChild(panel);
+        });
+
+        tabIdx++;
+      }
+    }
+
+    function switchTab(idx) {
+      document.querySelectorAll('.tab-btn').forEach(function(b) {
+        b.classList.toggle('active', parseInt(b.getAttribute('data-tab-idx')) === idx);
+      });
+      document.querySelectorAll('.tab-panel').forEach(function(p) {
+        p.classList.toggle('active', parseInt(p.getAttribute('data-tab-idx')) === idx);
+      });
+    }
+
+    // 监听引擎加载完成（等 DOM 就绪后再设置 observer）
+    document.addEventListener('DOMContentLoaded', function() {
+      var overlay = document.getElementById('LoadingOverlay');
+      if (!overlay) { onEngineReady(); return; }
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.removedNodes.forEach(function(node) {
+            if (node.id === 'LoadingOverlay') {
+              onEngineReady();
+              observer.disconnect();
+            }
+          });
+        });
+      });
+      observer.observe(overlay.parentNode, { childList: true });
+    });
+
+    // 通过文件选择器加载配置（复用引擎 onDropSetting 的解析逻辑）
+    function loadSettingFile(input) {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function() {
+        var c = null;
+        try { c = JSON.parse(reader.result || 'null'); } catch(e) {
+          showToast('无效的 JSON 文件', 'error'); return;
+        }
+        if (c && c.select && c.paletteSetting) {
+          loadConfig(c);
+          showToast('设置已加载', 'success');
+        } else {
+          showToast('不是有效的配置文件', 'error');
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    }
+
+    // 重置形象到默认状态
+    function resetCharacter() {
+      // 重置所有调色板到默认值
+      for (var a = 1; a < partsList.length; a++) {
+        if (partsList[a]) {
+          for (var b = 0; b < partsList[a].length; b++) {
+            if (partsList[a][b] && partsList[a][b].defaultPalette) {
+              var pal = partsList[a][b].palette;
+              var def = partsList[a][b].defaultPalette;
+              for (var d = 0; d < def.length; d++) {
+                var key = def[d].toString();
+                if (pal[key]) {
+                  pal[key][0] = def[d][0];
+                  pal[key][1] = def[d][1];
+                  pal[key][2] = def[d][2];
+                  if (def[d].length > 3) pal[key][3] = def[d][3];
+                }
+              }
+            }
+          }
+        }
+      }
+      resetSelect();
+      updateAllButtonColor();
+      remakeLinkedButtonImage();
+      drawResult();
+      updateSpuit();
+      try { localStorage.removeItem('dotKisekae_config'); } catch(e) {}
+      showToast('形象已重置', 'success');
+    }
+
+    function getCurrentConfig() {
+      var palette = [];
+      for (var b = 0; b < partsList.length; b++) {
+        if (partsList[b]) {
+          palette[b] = [];
+          for (var c = 0; c < partsList[b].length; c++) {
+            palette[b][c] = partsList[b][c].palette;
+          }
+        }
+      }
+      return { select: select, paletteSetting: palette };
+    }
+
+    function showToast(msg, type) {
+      var toast = document.createElement('div');
+      toast.className = 'toast toast-' + (type || 'info');
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.classList.add('show'); }, 10);
+      setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 3000);
+    }
+
+    var _lastSubmitTime = 0;
+    function submitWork() {
+      var now = Date.now();
+      if (now - _lastSubmitTime < 5000) {
+        showToast('提交太频繁，请 5 秒后再试', 'error');
+        return;
+      }
+
+      var username = document.getElementById('submitUsername').value.trim();
+      var message = document.getElementById('submitMessage').value.trim();
+
+      if (!username) { showToast('请输入用户名', 'error'); return; }
+      if (!message) { showToast('请输入寄语', 'error'); return; }
+
+      var canvas = document.getElementById('Canvas');
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        showToast('请等待捏人引擎加载完成后再提交', 'error');
+        return;
+      }
+
+      var config = getCurrentConfig();
+      var image = canvas.toDataURL('image/png');
+      showToast('提交中...', 'info');
+
+      fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, message: message, config: config, image: image })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          _lastSubmitTime = Date.now();
+          showToast('提交成功！等待管理员审核。', 'success');
+          document.getElementById('submitMessage').value = '';
+        } else {
+          showToast('提交失败: ' + (data.error || '未知错误'), 'error');
+        }
+      })
+      .catch(function() {
+        showToast('网络错误，请重试', 'error');
+      });
+    }
+    </script>
+    <div id="LoadingOverlay">
+      正在加载，请稍候....
+    </div>
+  </body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "trpg-dot-maker-server",
+  "version": "1.0.0",
+  "description": "TRPG 捏人提交与审核后端",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.0",
+    "express-session": "^1.19.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
