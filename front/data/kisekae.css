@@ -195,17 +195,6 @@ div.color-sample{
 .used-colors{
 }
 
-/* 現在のスポイトの色 */
-#Spuit{
-	color : #fff;
-	font-size: 0.4rem;
-	text-align : center;
-	width : 44px;
-	height : 44px;
-	border-radius: 2px;
-	line-height : 44px
-}
-
 /* パレット関係の枠 */
 .palette-container {
 	border-top: dotted 1px #999;
@@ -435,35 +424,115 @@ hr {
 .toast-success { background: #2e7d32; }
 .toast-error { background: #c62828; }
 
-/* 未使用。ファイルドロップ機能が実装されていた頃のもの 
-div.dropzone {
-	width: 500px;
-	height: 100px;
-	border: 1px #ababab dashed;
-	margin: 50px auto;
-}
+/* ===== 移动端竖屏适配 ===== */
+@media (max-width: 768px) {
+	body, html {
+		font-size: 1rem;
+	}
 
-div.dropzone p {
-	text-align: center;
-	line-height: 100px;
-	margin: 0;
-	padding: 0;
-}
+	div.all {
+		width: 100%;
+		min-width: 0;
+		border-radius: 0;
+	}
 
-色コピーボタン
-input.color-copy-button{
-	width:55px;
-	height:25px;
-	margin-top: 5px;
-	margin-right: 2px;
-}
+	div.main {
+		flex-direction: column;
+	}
 
-色ペーストボタン
-input.color-paste-button{
-	width:60px;
-	height:25px;
-	margin-top: 5px;
-	margin-right: 2px;
-}
+	div.left {
+		position: static;
+		width: 100%;
+		height: auto;
+		padding: 16px;
+		overflow: visible;
+		text-align: center;
+	}
 
-*/
+	#Canvas {
+		display: block;
+		margin: 0 auto;
+	}
+
+	.btn-group {
+		justify-content: center;
+	}
+
+	.btn-group .default_button {
+		flex: none;
+		min-height: 40px;
+		padding: 0 12px;
+		font-size: 0.85rem;
+	}
+
+	div.right {
+		position: static;
+		height: auto;
+		min-height: 50vh;
+	}
+
+	div.right-scroll {
+		overflow-y: visible;
+		padding: 12px;
+	}
+
+	.tab-btn {
+		padding: 10px 16px;
+		font-size: 0.9rem;
+	}
+
+	div.parts-container {
+		padding: 16px 12px;
+		margin-bottom: 14px;
+	}
+
+	input.color-picker {
+		width: 40px;
+		height: 44px;
+		margin-right: 4px;
+		border-radius: 4px;
+	}
+
+	.apply-template-select {
+		height: 40px;
+		font-size: 0.85rem;
+		margin-left: 4px;
+	}
+
+	.apply-template-button,
+	.default-button,
+	.synchronize-button {
+		height: 40px;
+		font-size: 0.85rem;
+		margin-left: 4px;
+		margin-right: 4px;
+	}
+
+	.synchronize-button {
+		width: auto;
+		max-width: 100%;
+		padding: 0 10px;
+	}
+
+	.palette-container {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px;
+		padding: 10px 4px 0;
+	}
+
+	.submit-section {
+		text-align: left;
+	}
+
+	.submit-btn {
+		min-height: 44px;
+		font-size: 0.95rem;
+	}
+
+	.submit-input {
+		font-size: 1rem;
+		padding: 10px;
+	}
+}
