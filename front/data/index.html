@@ -17,7 +17,6 @@
         <div class="left">
           <canvas id="Canvas">需要支持canvas标签的浏览器。</canvas>
           <div class="Result" style="display:none;">
-            <div id="Spuit">吸管</div>
             <div id="ResultPaletteContainer"></div>
           </div>
           <div class="btn-group">
@@ -267,7 +266,6 @@
       updateAllButtonColor();
       remakeLinkedButtonImage();
       drawResult();
-      updateSpuit();
       try { localStorage.removeItem('dotKisekae_config'); } catch(e) {}
       showToast('形象已重置', 'success');
     }
