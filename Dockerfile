@@ -7,7 +7,7 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app/server
 
 COPY server/package.json server/package-lock.json* ./
-RUN npm ci
+RUN npm ci --registry=https://registry.npmmirror.com
 
 COPY server/tsconfig.json ./
 COPY server/src ./src
@@ -23,7 +23,7 @@ WORKDIR /app
 
 # 仅安装生产依赖
 COPY server/package.json server/package-lock.json* ./server/
-RUN cd server && npm ci --omit=dev
+RUN cd server && npm ci --omit=dev --registry=https://registry.npmmirror.com
 
 # 清理编译工具（减小镜像体积）
 RUN apk del python3 make g++
