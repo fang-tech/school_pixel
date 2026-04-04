@@ -1,6 +1,8 @@
 # ---- 构建阶段 ----
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app/server
 
 COPY server/package.json server/package-lock.json* ./
@@ -13,11 +15,16 @@ RUN npm run build
 # ---- 运行阶段 ----
 FROM node:20-alpine
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # 仅安装生产依赖
 COPY server/package.json server/package-lock.json* ./server/
 RUN cd server && npm ci --omit=dev
+
+# 清理编译工具（减小镜像体积）
+RUN apk del python3 make g++
 
 # 复制编译产物
 COPY --from=builder /app/server/dist ./server/dist
