@@ -1,6 +1,7 @@
 # ---- 构建阶段 ----
 FROM node:20-alpine AS builder
 
+RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.ustc.edu.cn|g' /etc/apk/repositories
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app/server
@@ -15,6 +16,7 @@ RUN npm run build
 # ---- 运行阶段 ----
 FROM node:20-alpine
 
+RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.ustc.edu.cn|g' /etc/apk/repositories
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
