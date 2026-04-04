@@ -16,9 +16,32 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
+            set -e
+
+            echo "========== [1/6] 进入项目目录 =========="
             cd ~/swjtu-pixel-maker
-            git pull origin main
-            docker compose down
-            docker compose build
-            docker compose up -d
-            docker image prune -f
+            echo "当前目录: $(pwd)"
+            echo "当前分支: $(git branch --show-current)"
+            echo "当前 commit: $(git log --oneline -1)"
+
+            echo "========== [2/6] 拉取最新代码 =========="
+            git pull origin main 2>&1
+            echo "拉取后 commit: $(git log --oneline -1)"
+
+            echo "========== [3/6] 停止旧容器 =========="
+            docker compose down 2>&1
+            echo "容器已停止"
+
+            echo "========== [4/6] 构建新镜像 =========="
+            docker compose build 2>&1
+            echo "镜像构建完成"
+
+            echo "========== [5/6] 启动新容器 =========="
+            docker compose up -d 2>&1
+            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
+            echo "容器已启动"
+
+            echo "========== [6/6] 清理旧镜像 =========="
+            docker image prune -f 2>&1
+
+            echo "========== 部署完成 =========="
