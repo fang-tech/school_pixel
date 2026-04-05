@@ -49,6 +49,25 @@ app.use('/admin/api', requireAdmin, adminRouter);
 const frontDir = path.resolve(__dirname, '../../front');
 app.use('/maker', express.static(frontDir));
 
+// 静态资源：Unity WebGL 游戏
+const gameDir = path.resolve(__dirname, '../../web-demo');
+const BR_CONTENT_TYPES: Record<string, string> = {
+  '.data.br': 'application/octet-stream',
+  '.wasm.br': 'application/wasm',
+  '.js.br': 'application/javascript',
+};
+app.use('/game', (req, res, next) => {
+  const url = req.path;
+  for (const [suffix, contentType] of Object.entries(BR_CONTENT_TYPES)) {
+    if (url.endsWith(suffix)) {
+      res.set('Content-Encoding', 'br');
+      res.set('Content-Type', contentType);
+      break;
+    }
+  }
+  next();
+}, express.static(gameDir));
+
 // 管理后台页面
 const viewsDir = path.resolve(__dirname, '../views');
 app.get('/admin/login', (_req, res) => {

@@ -288,7 +288,7 @@ input:hover{
 /* ヘッダ */
 .header {
 	display: flex;
-	justify-content: center;
+	justify-content: space-between;
 	align-items: center;
 	background: #00447C;
 	padding: 12px 20px;
@@ -300,6 +300,24 @@ input:hover{
 	font-size: 1.1rem;
 	font-weight: 700;
 	letter-spacing: 2px;
+}
+
+.header-game-btn {
+	display: inline-block;
+	padding: 6px 18px;
+	color: #fff;
+	border: 1.5px solid #C5A664;
+	border-radius: 5px;
+	text-decoration: none;
+	font-size: 0.85rem;
+	font-weight: 600;
+	letter-spacing: 1px;
+	transition: background .2s, color .2s;
+}
+
+.header-game-btn:hover {
+	background: #C5A664;
+	color: #00447C;
 }
 
 /* フッタ */
