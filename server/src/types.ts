@@ -2,6 +2,9 @@ export interface Submission {
   id: number;
   username: string;
   message: string;
+  grade: string;
+  college: string;
+  identity: string;
   config: string; // JSON string of the chibi maker configuration
   image: string; // base64 data URL of the chibi canvas
   status: 'pending' | 'approved' | 'rejected';
@@ -11,6 +14,9 @@ export interface Submission {
 export interface SubmitPayload {
   username: string;
   message: string;
+  grade?: string;
+  college?: string;
+  identity?: string;
   config: object;
   image: string;
 }

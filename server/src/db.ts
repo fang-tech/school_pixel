@@ -10,29 +10,37 @@ export function initDB(): void {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
 
-  // 迁移：为旧表添加 image 列
-  const tableInfo = db.prepare("PRAGMA table_info(submissions)").all() as { name: string }[];
-  if (tableInfo.length > 0 && !tableInfo.find(col => col.name === 'image')) {
-    db.exec("ALTER TABLE submissions ADD COLUMN image TEXT NOT NULL DEFAULT ''");
-  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS submissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL,
       message TEXT NOT NULL,
+      grade TEXT NOT NULL DEFAULT '',
+      college TEXT NOT NULL DEFAULT '',
+      identity TEXT NOT NULL DEFAULT '',
       config TEXT NOT NULL,
       image TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // 迁移：为旧表添加缺失的列
+  const tableInfo = db.prepare("PRAGMA table_info(submissions)").all() as { name: string }[];
+  const cols = tableInfo.map(c => c.name);
+  if (cols.length > 0) {
+    if (!cols.includes('image'))   db.exec("ALTER TABLE submissions ADD COLUMN image TEXT NOT NULL DEFAULT ''");
+    if (!cols.includes('grade'))   db.exec("ALTER TABLE submissions ADD COLUMN grade TEXT NOT NULL DEFAULT ''");
+    if (!cols.includes('college')) db.exec("ALTER TABLE submissions ADD COLUMN college TEXT NOT NULL DEFAULT ''");
+    if (!cols.includes('identity'))db.exec("ALTER TABLE submissions ADD COLUMN identity TEXT NOT NULL DEFAULT ''");
+  }
 }
 
-export function insertSubmission(username: string, message: string, config: string, image: string): Submission {
+export function insertSubmission(username: string, message: string, grade: string, college: string, identity: string, config: string, image: string): Submission {
   const stmt = db.prepare(
-    'INSERT INTO submissions (username, message, config, image) VALUES (?, ?, ?, ?)'
+    'INSERT INTO submissions (username, message, grade, college, identity, config, image) VALUES (?, ?, ?, ?, ?, ?, ?)'
   );
-  const result = stmt.run(username, message, config, image);
+  const result = stmt.run(username, message, grade, college, identity, config, image);
   return getSubmissionById(result.lastInsertRowid as number)!;
 }
 

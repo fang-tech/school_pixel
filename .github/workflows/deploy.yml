@@ -20,7 +20,8 @@ jobs:
 
       - name: "[3/4] Rsync 推送代码到服务器"
         run: |
-          rsync -avz --delete \
+          rsync -av --delete \
+            --partial --timeout=300 \
             --exclude 'node_modules' \
             --exclude 'appdata' \
             --exclude 'data.db*' \

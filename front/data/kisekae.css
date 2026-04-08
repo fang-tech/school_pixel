@@ -22,8 +22,8 @@ body {
 div.all{
 	background-color: #fff;
 	box-shadow: 0 2px 16px rgba(0,68,124,0.12);
-	width: 1000px;
-	min-width: 1000px;
+	width: 100%;
+	max-width: 1000px;
 	margin: 0 auto;
 	border-radius: 0 0 8px 8px;
 }
@@ -333,7 +333,7 @@ input:hover{
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	position: absolute;
+	position: fixed;
 	left: 0;
 	top: 0;
 	width: 100%;
@@ -349,16 +349,31 @@ hr {
 	margin: 20px 0;
 }
 
-/* 提交作品区域 */
 .submit-section {
-	margin-top: 5px;
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: dotted 1px #ccc;
 }
 
 .submit-title {
 	font-weight: bold;
 	color: #00447C;
 	margin-bottom: 8px;
-	font-size: 0.95rem;
+	font-size: 1.05rem;
+}
+
+.submit-guide {
+	color: #666;
+	font-size: 0.8rem;
+	line-height: 1.6;
+	margin: 0 0 14px;
+}
+
+.submit-hint {
+	color: #999;
+	font-size: 0.75rem;
+	text-align: center;
+	margin: 4px 0 0;
 }
 
 .submit-form label {
@@ -442,6 +457,26 @@ hr {
 .toast-success { background: #2e7d32; }
 .toast-error { background: #c62828; }
 
+/* 底部规范说明 */
+.disclaimer {
+	background: #00447C;
+	color: #fff;
+	text-align: center;
+	padding: 16px 20px;
+	font-size: 0.78rem;
+	line-height: 1.6;
+}
+
+.disclaimer-title {
+	font-weight: bold;
+	margin-bottom: 8px;
+	font-size: 0.85rem;
+}
+
+.disclaimer p {
+	margin: 4px 0;
+}
+
 /* ===== 移动端竖屏适配 ===== */
 @media (max-width: 768px) {
 	body, html {
@@ -452,6 +487,20 @@ hr {
 		width: 100%;
 		min-width: 0;
 		border-radius: 0;
+	}
+
+	.header {
+		padding: 10px 14px;
+	}
+
+	.header-title {
+		font-size: 0.95rem;
+		letter-spacing: 1px;
+	}
+
+	.header-game-btn {
+		padding: 5px 12px;
+		font-size: 0.75rem;
 	}
 
 	div.main {
@@ -544,6 +593,18 @@ hr {
 		text-align: left;
 	}
 
+	.submit-title {
+		font-size: 1rem;
+	}
+
+	.submit-guide {
+		font-size: 0.85rem;
+	}
+
+	.submit-form label {
+		font-size: 0.85rem;
+	}
+
 	.submit-btn {
 		min-height: 44px;
 		font-size: 0.95rem;
@@ -552,5 +613,14 @@ hr {
 	.submit-input {
 		font-size: 1rem;
 		padding: 10px;
+	}
+
+	.disclaimer {
+		padding: 14px 16px;
+		font-size: 0.75rem;
+	}
+
+	.disclaimer-title {
+		font-size: 0.8rem;
 	}
 }

@@ -6,7 +6,7 @@ const router = Router();
 
 // 用户提交三元组（username + 寄语 + 捏人配置）
 router.post('/submit', (req: Request, res: Response) => {
-  const { username, message, config, image } = req.body as SubmitPayload;
+  const { username, message, grade, college, identity, config, image } = req.body as SubmitPayload;
 
   if (!username || !message || !config) {
     res.status(400).json({ error: '缺少必填字段：username, message, config' });
@@ -14,14 +14,17 @@ router.post('/submit', (req: Request, res: Response) => {
   }
 
   if (typeof username !== 'string' || typeof message !== 'string') {
-    res.status(400).json({ error: 'username 和 message 必须为字符串' });
+    res.status(400).json({ error: 'username, message 必须为字符串' });
     return;
   }
 
   try {
     const configStr = typeof config === 'string' ? config : JSON.stringify(config);
     const imageStr = typeof image === 'string' ? image : '';
-    const submission = insertSubmission(username.trim(), message.trim(), configStr, imageStr);
+    const gradeStr = typeof grade === 'string' ? grade.trim() : '';
+    const collegeStr = typeof college === 'string' ? college.trim() : '';
+    const identityStr = typeof identity === 'string' ? identity.trim() : '';
+    const submission = insertSubmission(username.trim(), message.trim(), gradeStr, collegeStr, identityStr, configStr, imageStr);
     res.json({ success: true, data: submission });
   } catch (err) {
     console.error('提交失败:', err);

@@ -32,13 +32,21 @@
           </div>
           <input type="file" id="configFileInput" accept=".json" style="display:none;" onchange="loadSettingFile(this);">
           <div class="submit-section">
-            <div class="submit-title">提交作品</div>
+            <div class="submit-title">收集你的像素形象</div>
+            <p class="submit-guide">填写以下信息，你的形象与祝福将被收录进像素交大地图，成为独一无二的NPC，与万千交大人相遇、对话、共忆青春。</p>
             <div class="submit-form">
-              <label for="submitUsername">用户名</label>
-              <input type="text" id="submitUsername" class="submit-input" placeholder="请输入用户名" maxlength="50">
-              <label for="submitMessage">寄语</label>
-              <textarea id="submitMessage" class="submit-input submit-textarea" placeholder="写一句寄语吧" maxlength="200" rows="3"></textarea>
-              <input type="button" class="default_button submit-btn" value="提交作品" onclick="submitWork();">
+              <label for="submitUsername">你的像素昵称</label>
+              <input type="text" id="submitUsername" class="submit-input" placeholder="输入昵称" title="创建你的角色名，在像素交大与所有人相遇！⭐" maxlength="50">
+              <label for="submitMessage">给母校的一句祝福</label>
+              <textarea id="submitMessage" class="submit-input submit-textarea" placeholder="写一句祝福" title="让每一位路过的交大人，都能听见你的心意❤️" maxlength="200" rows="3"></textarea>
+              <label for="submitGrade">你的入学年份（选填）</label>
+              <input type="text" id="submitGrade" class="submit-input" placeholder="如：2021" title="你与交大结缘的起点👍" maxlength="20">
+              <label for="submitCollege">所属学院（选填）</label>
+              <input type="text" id="submitCollege" class="submit-input" placeholder="如：计算机学院" title="你在交大扎根的家园🤝" maxlength="50">
+              <label for="submitIdentity">你的交大身份（选填）</label>
+              <input type="text" id="submitIdentity" class="submit-input" placeholder="如：本科生/研究生/博士生" title="你是此间少年，还是远方归人？👨‍👩‍👧‍👦" maxlength="50">
+              <input type="button" class="default_button submit-btn" value="生成我的交大NPC" onclick="submitWork();">
+              <p class="submit-hint">确认提交，你的故事将在像素交大里被永久珍藏</p>
               <div id="submitStatus" class="submit-status"></div>
             </div>
           </div>
@@ -49,6 +57,11 @@
             <div id="ImageContainer"></div>
           </div>
         </div>
+      </div>
+      <div class="disclaimer">
+        <div class="disclaimer-title">重要规范说明（为确保游戏顺利上线，请务必遵守）</div>
+        <p><strong>关于昵称、寄语：</strong>请使用积极健康的名称和寄语。严禁使用包括但不限于：政治敏感、暴力色情、侮辱歧视、广告宣传等任何不当词汇。</p>
+        <p><strong>关于形象：</strong>形象需为自己原创生成。严禁上传任何涉及侵权、色情、暴力、政治敏感或任何不合规的图片。</p>
       </div>
     </div>
     <script>
@@ -307,9 +320,12 @@
 
       var username = document.getElementById('submitUsername').value.trim();
       var message = document.getElementById('submitMessage').value.trim();
+      var grade = document.getElementById('submitGrade').value.trim();
+      var college = document.getElementById('submitCollege').value.trim();
+      var identity = document.getElementById('submitIdentity').value.trim();
 
-      if (!username) { showToast('请输入用户名', 'error'); return; }
-      if (!message) { showToast('请输入寄语', 'error'); return; }
+      if (!username) { showToast('请输入你的像素昵称', 'error'); return; }
+      if (!message) { showToast('请输入给母校的祝福', 'error'); return; }
 
       var canvas = document.getElementById('Canvas');
       if (!canvas || canvas.width === 0 || canvas.height === 0) {
@@ -324,7 +340,7 @@
       fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username, message: message, config: config, image: image })
+        body: JSON.stringify({ username: username, message: message, grade: grade, college: college, identity: identity, config: config, image: image })
       })
       .then(function(res) { return res.json(); })
       .then(function(data) {
