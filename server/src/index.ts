@@ -50,7 +50,7 @@ const frontDir = path.resolve(__dirname, '../../front');
 app.use('/maker', express.static(frontDir));
 
 // 静态资源：Unity WebGL 游戏
-const gameDir = path.resolve(__dirname, '../../web demo');
+const gameDir = path.resolve(__dirname, '../../web-demo');
 const BR_CONTENT_TYPES: Record<string, string> = {
   '.data.br': 'application/octet-stream',
   '.wasm.br': 'application/wasm',

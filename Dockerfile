@@ -38,7 +38,7 @@ COPY server/views ./server/views
 COPY front ./front
 
 # 复制 Unity WebGL 游戏包体
-COPY ["web demo", "./web demo/"]
+COPY web-demo ./web-demo
 
 # 创建数据目录
 RUN mkdir -p /data
