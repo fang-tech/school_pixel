@@ -25,5 +25,12 @@ Thumbs.db
 # Env
 .env
 
+# SSL 证书（含私钥，严禁上传）
+certs/
+*.crt
+*.key
+*.pem
+cert*_NGINX/
+
 # Logs
 *.log

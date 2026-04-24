@@ -1,0 +1,15 @@
+{
+    "name": "我和我的像素交大",
+    "short_name": "我和我的像素交大",
+    "start_url": "index.html",
+    "display": "fullscreen",
+    "background_color": "#FFFFFF",
+    "theme_color": "#fff",
+    "description": ".LINE",
+    "icons": [{
+      "src": "TemplateData/icons/unity-logo-light.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }]
+  }
