@@ -71,11 +71,9 @@ export function deleteSubmission(id: number): boolean {
   return result.changes > 0;
 }
 
-// NPC 端只需要 config 等字段重建立绘，不需要 base64 图片
-// 排除 image 字段可显著减小响应体（每条记录可能含数十～数百 KB 的 base64）
-export function getApprovedSubmissions(): Omit<Submission, 'image'>[] {
+export function getApprovedSubmissions(): Submission[] {
   const stmt = db.prepare(
-    "SELECT id, username, message, grade, college, identity, config, status, created_at FROM submissions WHERE status = 'approved' ORDER BY created_at DESC"
+    "SELECT * FROM submissions WHERE status = 'approved' ORDER BY created_at DESC"
   );
-  return stmt.all() as Omit<Submission, 'image'>[];
+  return stmt.all() as Submission[];
 }
