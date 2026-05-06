@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+# 强制使用 Node.js 24，解决 deprecation warning
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,6 +37,8 @@ jobs:
 
       - name: "[4/4] 远程重建并启动容器"
         uses: appleboy/ssh-action@v1
+        env:
+          DOCKER_BUILDKIT: 1
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -41,26 +47,32 @@ jobs:
           command_timeout: 15m
           script: |
             set -e
-
             echo "========== 进入项目目录 =========="
             cd ~/swjtu-pixel-maker
-            echo "当前目录: $(pwd)"
-            ls -la Dockerfile docker-compose.yml
-
+            
+            echo "========== 备份数据库 =========="
+            mkdir -p ~/backup
+            cp appdata/data.db ~/backup/data-$(date +%Y%m%d-%H%M%S).db 2>/dev/null || echo "⚠️ 无数据库备份"
+            
             echo "========== 停止旧容器 =========="
             docker compose down 2>&1
-            echo "✅ 容器已停止"
-
-            echo "========== 构建新镜像 =========="
+            
+            echo "========== 构建新镜像（带缓存）=========="
+            export DOCKER_BUILDKIT=1
             docker compose build 2>&1
-            echo "✅ 镜像构建完成"
-
+            
             echo "========== 启动新容器 =========="
             docker compose up -d 2>&1
+            
+            echo "========== 健康检查 =========="
+            sleep 5
+            curl -sf http://localhost:3000/ && echo "✅ 服务健康" || (echo "❌ 健康检查失败" && exit 1)
+            
+            echo "========== 容器状态 =========="
             docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
-            echo "✅ 容器已启动"
-
-            echo "========== 清理旧镜像 =========="
+            
+            echo "========== 清理 =========="
             docker image prune -f 2>&1
-
+            docker system prune -f --volumes 2>/dev/null || true
+            
             echo "========== ✅ 部署完成 =========="
