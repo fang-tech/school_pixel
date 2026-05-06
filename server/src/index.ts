@@ -57,18 +57,7 @@ const BR_CONTENT_TYPES: Record<string, string> = {
   '.js.br': 'application/javascript',
 };
 
-// 入口 / SW / manifest 必须及时更新，否则发新版用户拿不到新 loaderUrl
-// 用 Set 做 O(1) 查询，避免每次请求跑循环匹配
-const GAME_NO_CACHE_PATHS = new Set<string>([
-  '/',
-  '/index.html',
-  '/ServiceWorker.js',
-  '/manifest.webmanifest',
-]);
-
-// Unity 构建产物（Build/、StreamingAssets/、TemplateData/）内容和文件名绑定
-// 长缓存让 CDN 命中边缘，重新构建游戏后需手动刷新 CDN 缓存
-const GAME_LONG_CACHE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const GAME_REVALIDATE_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
 app.use('/game', (req, res, next) => {
   const url = req.path;
@@ -80,11 +69,7 @@ app.use('/game', (req, res, next) => {
     }
   }
 
-  if (GAME_NO_CACHE_PATHS.has(url)) {
-    res.set('Cache-Control', 'public, max-age=0, must-revalidate');
-  } else {
-    res.set('Cache-Control', `public, max-age=${GAME_LONG_CACHE_MAX_AGE_SECONDS}, immutable`);
-  }
+  res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
   next();
 }, express.static(gameDir, { etag: true, lastModified: true }));
 
