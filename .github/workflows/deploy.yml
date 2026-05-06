@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
 
-<<<<<<< HEAD
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -12,12 +11,6 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-=======
-# 强制使用 Node.js 24，解决 deprecation warning
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
->>>>>>> 99f297ce9f24c736fd292500e7de763b744b70d7
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -68,7 +61,6 @@ jobs:
             set -e
             echo "========== 进入项目目录 =========="
             cd ~/swjtu-pixel-maker
-<<<<<<< HEAD
             echo "当前目录: $(pwd)"
             ls -la Dockerfile docker-compose.yml
 
@@ -81,22 +73,11 @@ jobs:
               echo "⚠️ 未找到数据库，跳过备份"
             fi
 
-=======
-            
-            echo "========== 备份数据库 =========="
-            mkdir -p ~/backup
-            cp appdata/data.db ~/backup/data-$(date +%Y%m%d-%H%M%S).db 2>/dev/null || echo "⚠️ 无数据库备份"
-            
-            echo "========== 停止旧容器 =========="
-            docker compose down 2>&1
-            
->>>>>>> 99f297ce9f24c736fd292500e7de763b744b70d7
             echo "========== 构建新镜像（带缓存）=========="
             export DOCKER_BUILDKIT=1
             docker compose build 2>&1
             
             echo "========== 启动新容器 =========="
-<<<<<<< HEAD
             docker compose up -d --force-recreate --remove-orphans 2>&1
             docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
             echo "✅ 容器已启动"
@@ -122,18 +103,6 @@ jobs:
             docker exec swjtu-pixel-nginx nginx -t 2>&1
 
             echo "========== 清理旧镜像 =========="
-=======
-            docker compose up -d 2>&1
-            
-            echo "========== 健康检查 =========="
-            sleep 5
-            curl -sf http://localhost:3000/ && echo "✅ 服务健康" || (echo "❌ 健康检查失败" && exit 1)
-            
-            echo "========== 容器状态 =========="
-            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
-            
-            echo "========== 清理 =========="
->>>>>>> 99f297ce9f24c736fd292500e7de763b744b70d7
             docker image prune -f 2>&1
             docker system prune -f --volumes 2>/dev/null || true
             
