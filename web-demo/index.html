@@ -20,6 +20,11 @@
       <div id="unity-warning"> </div>
     </div>
     <script>
+      window.addEventListener("load", function () {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("ServiceWorker.js");
+        }
+      });
 
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
@@ -51,14 +56,13 @@
         updateBannerVisibility();
       }
 
-      var cdnUrl = "https://cdn.devshowcase.site/game";
-      var buildUrl = cdnUrl + "/Build";
+      var buildUrl = "Build";
       var loaderUrl = buildUrl + "/web-demo.loader.js";
       var config = {
         dataUrl: buildUrl + "/web-demo.data.br",
         frameworkUrl: buildUrl + "/web-demo.framework.js.br",
         codeUrl: buildUrl + "/web-demo.wasm.br",
-        streamingAssetsUrl: cdnUrl + "/StreamingAssets",
+        streamingAssetsUrl: "StreamingAssets",
         companyName: ".LINE",
         productName: "我和我的像素交大",
         productVersion: "1.1",
