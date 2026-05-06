@@ -4,10 +4,20 @@ on:
   push:
     branches: [main]
 
+<<<<<<< HEAD
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+=======
 # 强制使用 Node.js 24，解决 deprecation warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+>>>>>>> 99f297ce9f24c736fd292500e7de763b744b70d7
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -24,6 +34,10 @@ jobs:
 
       - name: "[3/4] Rsync 推送代码到服务器"
         run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "mkdir -p ~/swjtu-pixel-maker && find ~/swjtu-pixel-maker -name '.rsync-partial' -type d -prune -exec rm -rf {} +"
+
           rsync -av --delete \
             --partial \
             --partial-dir=.rsync-partial \
@@ -33,6 +47,7 @@ jobs:
             --exclude 'appdata' \
             --exclude 'data.db*' \
             --exclude '.git' \
+            --exclude '.github' \
             --exclude '.DS_Store' \
             --exclude '.rsync-partial' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }}" \
@@ -53,6 +68,20 @@ jobs:
             set -e
             echo "========== 进入项目目录 =========="
             cd ~/swjtu-pixel-maker
+<<<<<<< HEAD
+            echo "当前目录: $(pwd)"
+            ls -la Dockerfile docker-compose.yml
+
+            echo "========== 备份数据库 =========="
+            mkdir -p ~/backup
+            if [ -f appdata/data.db ]; then
+              cp appdata/data.db ~/backup/data-$(date +%Y%m%d-%H%M%S).db
+              echo "✅ 数据库已备份"
+            else
+              echo "⚠️ 未找到数据库，跳过备份"
+            fi
+
+=======
             
             echo "========== 备份数据库 =========="
             mkdir -p ~/backup
@@ -61,11 +90,39 @@ jobs:
             echo "========== 停止旧容器 =========="
             docker compose down 2>&1
             
+>>>>>>> 99f297ce9f24c736fd292500e7de763b744b70d7
             echo "========== 构建新镜像（带缓存）=========="
             export DOCKER_BUILDKIT=1
             docker compose build 2>&1
             
             echo "========== 启动新容器 =========="
+<<<<<<< HEAD
+            docker compose up -d --force-recreate --remove-orphans 2>&1
+            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
+            echo "✅ 容器已启动"
+
+            echo "========== 健康检查 =========="
+            for i in $(seq 1 12); do
+              if docker exec swjtu-pixel-maker node -e "fetch('http://127.0.0.1:3000/maker/data/index.html').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; then
+                echo "✅ App 健康检查通过"
+                break
+              fi
+
+              if [ "$i" -eq 12 ]; then
+                echo "❌ App 健康检查失败"
+                docker logs --tail=120 swjtu-pixel-maker 2>&1 || true
+                docker logs --tail=120 swjtu-pixel-nginx 2>&1 || true
+                exit 1
+              fi
+
+              echo "等待服务启动中... ($i/12)"
+              sleep 5
+            done
+
+            docker exec swjtu-pixel-nginx nginx -t 2>&1
+
+            echo "========== 清理旧镜像 =========="
+=======
             docker compose up -d 2>&1
             
             echo "========== 健康检查 =========="
@@ -76,6 +133,7 @@ jobs:
             docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
             
             echo "========== 清理 =========="
+>>>>>>> 99f297ce9f24c736fd292500e7de763b744b70d7
             docker image prune -f 2>&1
             docker system prune -f --volumes 2>/dev/null || true
             
