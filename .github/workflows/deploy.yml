@@ -25,12 +25,16 @@ jobs:
       - name: "[3/4] Rsync 推送代码到服务器"
         run: |
           rsync -av --delete \
-            --partial --timeout=300 \
+            --partial \
+            --partial-dir=.rsync-partial \
+            --delay-updates \
+            --timeout=300 \
             --exclude 'node_modules' \
             --exclude 'appdata' \
             --exclude 'data.db*' \
             --exclude '.git' \
             --exclude '.DS_Store' \
+            --exclude '.rsync-partial' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }}" \
             ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/
           echo "✅ 代码推送完成"
