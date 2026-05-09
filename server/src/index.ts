@@ -58,7 +58,30 @@ const BR_CONTENT_TYPES: Record<string, string> = {
 };
 
 const GAME_REVALIDATE_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
+const BR_CACHE_CONTROL = 'public, max-age=3600';
+const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
+// Addressables bundle 文件（文件名含 hash，immutable 长缓存）
+app.use('/game/StreamingAssets/aa', (req, res, next) => {
+  if (req.path.endsWith('.bundle')) {
+    res.set('Content-Type', 'application/octet-stream');
+    res.set('Cache-Control', IMMUTABLE_CACHE_CONTROL);
+  } else {
+    res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
+  }
+  next();
+}, express.static(path.join(gameDir, 'StreamingAssets/aa'), { etag: true, lastModified: true }));
+
+// FMOD .bank 文件（内容不变时可用 etag 缓存）
+app.use('/game/StreamingAssets', (req, res, next) => {
+  if (req.path.endsWith('.bank')) {
+    res.set('Content-Type', 'application/octet-stream');
+    res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
+  }
+  next();
+}, express.static(path.join(gameDir, 'StreamingAssets'), { etag: true, lastModified: true }));
+
+// Unity WebGL Build 核心文件（.br 压缩文件 + 其他静态资源）
 app.use('/game', (req, res, next) => {
   const url = req.path;
   for (const [suffix, contentType] of Object.entries(BR_CONTENT_TYPES)) {
@@ -69,7 +92,8 @@ app.use('/game', (req, res, next) => {
     }
   }
 
-  res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
+  const isBrFile = Object.keys(BR_CONTENT_TYPES).some(s => url.endsWith(s));
+  res.set('Cache-Control', isBrFile ? BR_CACHE_CONTROL : GAME_REVALIDATE_CACHE_CONTROL);
   next();
 }, express.static(gameDir, { etag: true, lastModified: true }));
 

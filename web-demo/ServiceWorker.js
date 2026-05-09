@@ -1,4 +1,4 @@
-const cacheName = ".LINE-我和我的像素交大-1.1";
+const cacheName = ".LINE-我和我的像素交大-1.6.3";
 const contentToCache = [
     "Build/web-demo.loader.js",
     "Build/web-demo.framework.js.br",
