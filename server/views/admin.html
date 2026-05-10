@@ -89,6 +89,19 @@
       margin-bottom: 8px;
       word-break: break-word;
     }
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .card-meta-item {
+      color: #666;
+      background: #f3f3f3;
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+    }
     .card-config-toggle {
       font-size: 0.78rem;
       color: #888;
@@ -231,6 +244,7 @@
         var imgHtml = s.image
           ? '<img src="' + escapeAttr(s.image) + '" alt="小人预览">'
           : '<span class="no-img">无预览</span>';
+        var metaHtml = buildMetaHtml(s);
         return '<div class="card" id="card-' + s.id + '">' +
           '<div class="card-preview">' + imgHtml + '</div>' +
           '<div class="card-body">' +
@@ -240,6 +254,7 @@
               '<span class="card-time">' + s.created_at + '</span>' +
             '</div>' +
             '<div class="card-message">' + escapeHtml(s.message) + '</div>' +
+            metaHtml +
             '<span class="card-config-toggle" onclick="toggleConfig(' + s.id + ')">[ 查看配置 ]</span>' +
             '<pre class="card-config" id="config-' + s.id + '">' + escapeHtml(s.config) + '</pre>' +
           '</div>' +
@@ -250,6 +265,18 @@
           '</div>' +
         '</div>';
       }).join('');
+    }
+
+    function buildMetaHtml(s) {
+      var items = [
+        ['入学年份', s.grade],
+        ['所属学院', s.college],
+        ['交大身份', s.identity]
+      ].filter(function(item) { return item[1]; });
+      if (items.length === 0) return '';
+      return '<div class="card-meta">' + items.map(function(item) {
+        return '<span class="card-meta-item">' + escapeHtml(item[0]) + '：' + escapeHtml(item[1]) + '</span>';
+      }).join('') + '</div>';
     }
 
     function toggleConfig(id) {
