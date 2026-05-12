@@ -4,33 +4,79 @@ on:
   push:
     branches: [main]
 
+# 强制使用 Node.js 24，解决 deprecation warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: "[1/4] Checkout 代码"
+      - name: "[1] Checkout 代码"
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: "[2/4] 配置 SSH 密钥"
+      - name: "[2] 判断变更范围"
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          echo "changed files:"
+          echo "$CHANGED"
+          # 是否有 web-demo/ 之外的文件变动
+          NON_GAME=$(echo "$CHANGED" | grep -v '^web-demo/' | grep -v '^\.' || true)
+          if [ -z "$NON_GAME" ]; then
+            echo "mode=game-only" >> $GITHUB_OUTPUT
+            echo "✅ 仅 web-demo 变动，走快速更新路径"
+          else
+            echo "mode=full" >> $GITHUB_OUTPUT
+            echo "✅ 检测到非游戏文件变动，走完整部署路径"
+          fi
+
+      - name: "[3] 配置 SSH 密钥"
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.SERVER_PORT || 22 }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: "[3/4] Rsync 推送代码到服务器"
+      # ────────────────────────────────────────────
+      # 快速路径：仅游戏包体变动，直接同步文件，不重建镜像
+      # ────────────────────────────────────────────
+      - name: "[快速] Rsync web-demo 到服务器"
+        if: steps.changes.outputs.mode == 'game-only'
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }} \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "mkdir -p ~/swjtu-pixel-maker && find ~/swjtu-pixel-maker -name '.rsync-partial' -type d -prune -exec rm -rf {} +"
+          rsync -av --delete \
+            --timeout=120 \
+            --exclude '.git' \
+            --exclude '.DS_Store' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }}" \
+            ./web-demo/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/web-demo/
+          echo "✅ web-demo 同步完成"
 
+      - name: "[快速] 复制游戏文件进容器"
+        if: steps.changes.outputs.mode == 'game-only'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          command_timeout: 3m
+          script: |
+            set -e
+            echo "========== 复制 web-demo 进容器 =========="
+            docker cp ~/swjtu-pixel-maker/web-demo/. swjtu-pixel-maker:/app/web-demo/
+            echo "========== 健康检查 =========="
+            curl -sf http://localhost:3000/ && echo "✅ 服务正常" || echo "⚠️ 健康检查失败"
+            echo "========== ✅ 游戏包体快速更新完成 =========="
+
+      # ────────────────────────────────────────────
+      # 完整路径：有代码/配置变动，重建 Docker 镜像
+      # ────────────────────────────────────────────
+      - name: "[完整] Rsync 全量推送代码到服务器"
+        if: steps.changes.outputs.mode == 'full'
+        run: |
           rsync -av --delete \
             --partial \
             --partial-dir=.rsync-partial \
@@ -40,14 +86,14 @@ jobs:
             --exclude 'appdata' \
             --exclude 'data.db*' \
             --exclude '.git' \
-            --exclude '.github' \
             --exclude '.DS_Store' \
             --exclude '.rsync-partial' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }}" \
             ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/
           echo "✅ 代码推送完成"
 
-      - name: "[4/4] 远程重建并启动容器"
+      - name: "[完整] 远程重建并启动容器"
+        if: steps.changes.outputs.mode == 'full'
         uses: appleboy/ssh-action@v1
         env:
           DOCKER_BUILDKIT: 1
@@ -61,49 +107,30 @@ jobs:
             set -e
             echo "========== 进入项目目录 =========="
             cd ~/swjtu-pixel-maker
-            echo "当前目录: $(pwd)"
-            ls -la Dockerfile docker-compose.yml
 
             echo "========== 备份数据库 =========="
             mkdir -p ~/backup
-            if [ -f appdata/data.db ]; then
-              cp appdata/data.db ~/backup/data-$(date +%Y%m%d-%H%M%S).db
-              echo "✅ 数据库已备份"
-            else
-              echo "⚠️ 未找到数据库，跳过备份"
-            fi
+            cp appdata/data.db ~/backup/data-$(date +%Y%m%d-%H%M%S).db 2>/dev/null || echo "⚠️ 无数据库备份"
+
+            echo "========== 停止旧容器 =========="
+            docker compose down 2>&1
 
             echo "========== 构建新镜像（带缓存）=========="
             export DOCKER_BUILDKIT=1
             docker compose build 2>&1
-            
+
             echo "========== 启动新容器 =========="
-            docker compose up -d --force-recreate --remove-orphans 2>&1
-            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
-            echo "✅ 容器已启动"
+            docker compose up -d 2>&1
 
             echo "========== 健康检查 =========="
-            for i in $(seq 1 12); do
-              if docker exec swjtu-pixel-maker node -e "fetch('http://127.0.0.1:3000/maker/data/index.html').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"; then
-                echo "✅ App 健康检查通过"
-                break
-              fi
+            sleep 5
+            curl -sf http://localhost:3000/ && echo "✅ 服务健康" || (echo "❌ 健康检查失败" && exit 1)
 
-              if [ "$i" -eq 12 ]; then
-                echo "❌ App 健康检查失败"
-                docker logs --tail=120 swjtu-pixel-maker 2>&1 || true
-                docker logs --tail=120 swjtu-pixel-nginx 2>&1 || true
-                exit 1
-              fi
+            echo "========== 容器状态 =========="
+            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
 
-              echo "等待服务启动中... ($i/12)"
-              sleep 5
-            done
-
-            docker exec swjtu-pixel-nginx nginx -t 2>&1
-
-            echo "========== 清理旧镜像 =========="
+            echo "========== 清理 =========="
             docker image prune -f 2>&1
             docker system prune -f --volumes 2>/dev/null || true
-            
+
             echo "========== ✅ 部署完成 =========="

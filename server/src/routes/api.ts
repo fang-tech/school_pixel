@@ -32,11 +32,13 @@ router.post('/submit', (req: Request, res: Response) => {
   }
 });
 
-// 获取所有已审核通过的三元组
+// 获取所有已审核通过的三元组（只返回游戏需要的字段，不含 config）
 router.get('/approved', (_req: Request, res: Response) => {
   try {
     const approved = getApprovedSubmissions();
-    res.json({ success: true, data: approved });
+    const slim = approved.map(({ config: _config, ...rest }: any) => rest);
+    res.set('Cache-Control', 'public, max-age=30');
+    res.json({ success: true, data: slim });
   } catch (err) {
     console.error('查询失败:', err);
     res.status(500).json({ error: '查询失败' });

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getAllSubmissions, updateSubmissionStatus, deleteSubmission } from '../db';
+import { getAllSubmissions, updateSubmissionStatus, updateSubmissionImage, deleteSubmission } from '../db';
 import { ReviewAction } from '../types';
 
 const router = Router();
@@ -40,6 +40,34 @@ router.post('/review/:id', (req: Request, res: Response) => {
   } catch (err) {
     console.error('审核操作失败:', err);
     res.status(500).json({ error: '审核操作失败' });
+  }
+});
+
+// 更新图像（用于重建 NPC sprite）
+router.post('/submissions/:id/image', (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string, 10);
+  const { image } = req.body as { image?: string };
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: '无效的 ID' });
+    return;
+  }
+
+  if (typeof image !== 'string' || !image.startsWith('data:image/png;base64,')) {
+    res.status(400).json({ error: 'image 必须是 PNG base64 data URL' });
+    return;
+  }
+
+  try {
+    const updated = updateSubmissionImage(id, image);
+    if (!updated) {
+      res.status(404).json({ error: '未找到该提交记录' });
+      return;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('更新图像失败:', err);
+    res.status(500).json({ error: '更新图像失败' });
   }
 });
 

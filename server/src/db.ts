@@ -65,6 +65,12 @@ export function updateSubmissionStatus(id: number, action: ReviewAction): boolea
   return result.changes > 0;
 }
 
+export function updateSubmissionImage(id: number, image: string): boolean {
+  const stmt = db.prepare('UPDATE submissions SET image = ? WHERE id = ?');
+  const result = stmt.run(image, id);
+  return result.changes > 0;
+}
+
 export function deleteSubmission(id: number): boolean {
   const stmt = db.prepare('DELETE FROM submissions WHERE id = ?');
   const result = stmt.run(id);
