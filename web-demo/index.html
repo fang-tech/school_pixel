@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>{{{ PRODUCT_NAME }}}</title>
+  <title>我和我的像素交大</title>
   <style>
     body { padding: 0; margin: 0; overflow: hidden; }
     #unity-container { position: fixed; width: 100%; height: 100%; }
@@ -84,13 +84,13 @@
     // Unity 配置
     var buildUrl = "Build";
     var config = {
-      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
-      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
-      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+      dataUrl: buildUrl + "/web-demo.data.br",
+      frameworkUrl: buildUrl + "/web-demo.framework.js.br",
+      codeUrl: buildUrl + "/web-demo.wasm.br",
       streamingAssetsUrl: "StreamingAssets",
-      companyName: "{{{ COMPANY_NAME }}}",
-      productName: "{{{ PRODUCT_NAME }}}",
-      productVersion: "{{{ PRODUCT_VERSION }}}",
+      companyName: ".LINE",
+      productName: "我和我的像素交大",
+      productVersion: "1.6",
       showBanner: unityShowBanner,
     };
 
@@ -106,7 +106,7 @@
 
     // 加载 Unity
     var script = document.createElement("script");
-    script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    script.src = buildUrl + "/web-demo.loader.js";
     script.onload = () => {
       createUnityInstance(canvas, config, (progress) => {
         progressBarFull.style.width = 100 * progress + "%";

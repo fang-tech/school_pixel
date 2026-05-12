@@ -50,6 +50,7 @@ jobs:
             --timeout=120 \
             --exclude '.git' \
             --exclude '.DS_Store' \
+            --exclude 'index.html' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }}" \
             ./web-demo/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/web-demo/
           echo "✅ web-demo 同步完成"
@@ -88,9 +89,18 @@ jobs:
             --exclude '.git' \
             --exclude '.DS_Store' \
             --exclude '.rsync-partial' \
+            --exclude 'web-demo/index.html' \
             -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SERVER_PORT || 22 }}" \
             ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/
           echo "✅ 代码推送完成"
+
+      - name: "[一次性] 同步正确的 index.html 到服务器"
+        if: steps.changes.outputs.mode == 'full'
+        run: |
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.SERVER_PORT || 22 }} \
+            ./web-demo/index.html \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/web-demo/index.html
+          echo "✅ index.html 已更新（此 step 完成后可从 workflow 删除）"
 
       - name: "[完整] 远程重建并启动容器"
         if: steps.changes.outputs.mode == 'full'
@@ -123,8 +133,14 @@ jobs:
             docker compose up -d 2>&1
 
             echo "========== 健康检查 =========="
-            sleep 5
-            curl -sf http://localhost:3000/ && echo "✅ 服务健康" || (echo "❌ 健康检查失败" && exit 1)
+            for i in $(seq 1 10); do
+              sleep 3
+              docker exec swjtu-pixel-maker node -e \
+                "fetch('http://127.0.0.1:3000/maker/data/index.html').then(r=>{if(!r.ok)throw r.status;process.exit(0)}).catch(()=>process.exit(1))" \
+                && echo "✅ 健康检查通过（第 ${i} 次）" && break \
+                || echo "⏳ 等待服务就绪... (${i}/10)"
+              if [ "$i" -eq 10 ]; then echo "❌ 健康检查失败" && exit 1; fi
+            done
 
             echo "========== 容器状态 =========="
             docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'swjtu|NAMES'
