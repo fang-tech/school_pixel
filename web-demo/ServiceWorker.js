@@ -1,9 +1,9 @@
 const cacheName = ".LINE-我和我的像素交大-1.6.5";
 const contentToCache = [
     "Build/web-demo.loader.js",
-    "Build/web-demo.framework.js",
-    "Build/web-demo.data",
-    "Build/web-demo.wasm",
+    "Build/web-demo.framework.js.br",
+    "Build/web-demo.data.br",
+    "Build/web-demo.wasm.br",
     "TemplateData/style.css"
 
 ];
