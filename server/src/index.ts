@@ -1,6 +1,8 @@
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 import { initDB } from './db';
 import { SESSION_SECRET } from './config';
 import { requireAdmin } from './middleware/auth';
@@ -58,8 +60,34 @@ const BR_CONTENT_TYPES: Record<string, string> = {
 };
 
 const GAME_REVALIDATE_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
-const BR_CACHE_CONTROL = 'public, max-age=3600';
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+// 计算 Build 目录的版本 hash（取 wasm.br 文件内容 md5 前 8 位）
+function computeBuildVersion(): string {
+  const wasmPath = path.join(gameDir, 'Build', 'web-demo.wasm.br');
+  try {
+    const buf = fs.readFileSync(wasmPath);
+    return crypto.createHash('md5').update(buf).digest('hex').slice(0, 8);
+  } catch {
+    return 'dev';
+  }
+}
+
+const BUILD_VERSION = computeBuildVersion();
+console.log(`游戏 Build 版本: ${BUILD_VERSION}`);
+
+// 设置 .br 文件的 Content-Type / Content-Encoding 中间件
+function brMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const url = req.path;
+  for (const [suffix, contentType] of Object.entries(BR_CONTENT_TYPES)) {
+    if (url.endsWith(suffix)) {
+      res.set('Content-Encoding', 'br');
+      res.set('Content-Type', contentType);
+      break;
+    }
+  }
+  next();
+}
 
 // Addressables bundle 文件（文件名含 hash，immutable 长缓存）
 app.use('/game/StreamingAssets/aa', (req, res, next) => {
@@ -72,7 +100,7 @@ app.use('/game/StreamingAssets/aa', (req, res, next) => {
   next();
 }, express.static(path.join(gameDir, 'StreamingAssets/aa'), { etag: true, lastModified: true }));
 
-// FMOD .bank 文件（内容不变时可用 etag 缓存）
+// FMOD .bank 文件
 app.use('/game/StreamingAssets', (req, res, next) => {
   if (req.path.endsWith('.bank')) {
     res.set('Content-Type', 'application/octet-stream');
@@ -81,19 +109,35 @@ app.use('/game/StreamingAssets', (req, res, next) => {
   next();
 }, express.static(path.join(gameDir, 'StreamingAssets'), { etag: true, lastModified: true }));
 
-// Unity WebGL Build 核心文件（.br 压缩文件 + 其他静态资源）
-app.use('/game', (req, res, next) => {
-  const url = req.path;
-  for (const [suffix, contentType] of Object.entries(BR_CONTENT_TYPES)) {
-    if (url.endsWith(suffix)) {
-      res.set('Content-Encoding', 'br');
-      res.set('Content-Type', contentType);
-      break;
-    }
-  }
+// 版本化 Build 路径：/game/v{hash}/Build/* → immutable 永久缓存
+app.use(`/game/v${BUILD_VERSION}/Build`, brMiddleware, (req, res, next) => {
+  res.set('Cache-Control', IMMUTABLE_CACHE_CONTROL);
+  next();
+}, express.static(path.join(gameDir, 'Build'), { etag: false, lastModified: false }));
 
-  const isBrFile = Object.keys(BR_CONTENT_TYPES).some(s => url.endsWith(s));
-  res.set('Cache-Control', isBrFile ? BR_CACHE_CONTROL : GAME_REVALIDATE_CACHE_CONTROL);
+// 兼容旧路径 /game/Build/*（短缓存，用于平滑过渡）
+app.use('/game/Build', brMiddleware, (req, res, next) => {
+  res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
+  next();
+}, express.static(path.join(gameDir, 'Build'), { etag: true, lastModified: true }));
+
+// /game/index.html：动态注入版本号，本身不缓存
+app.get('/game/index.html', (_req, res) => {
+  const templatePath = path.join(gameDir, 'index.html');
+  let html = fs.readFileSync(templatePath, 'utf8');
+  // 替换 buildUrl 变量，将 "Build" 改为版本化路径
+  html = html.replace(
+    /var buildUrl\s*=\s*["']Build["']/,
+    `var buildUrl = "/game/v${BUILD_VERSION}/Build"`
+  );
+  res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+});
+
+// /game 其余静态资源（非 Build 文件）
+app.use('/game', (req, res, next) => {
+  res.set('Cache-Control', GAME_REVALIDATE_CACHE_CONTROL);
   next();
 }, express.static(gameDir, { etag: true, lastModified: true }));
 

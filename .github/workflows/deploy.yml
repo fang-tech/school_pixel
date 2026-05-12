@@ -94,14 +94,6 @@ jobs:
             ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/
           echo "✅ 代码推送完成"
 
-      - name: "[一次性] 同步正确的 index.html 到服务器"
-        if: steps.changes.outputs.mode == 'full'
-        run: |
-          scp -i ~/.ssh/deploy_key -P ${{ secrets.SERVER_PORT || 22 }} \
-            ./web-demo/index.html \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/swjtu-pixel-maker/web-demo/index.html
-          echo "✅ index.html 已更新（此 step 完成后可从 workflow 删除）"
-
       - name: "[完整] 远程重建并启动容器"
         if: steps.changes.outputs.mode == 'full'
         uses: appleboy/ssh-action@v1
